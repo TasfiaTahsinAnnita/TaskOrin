@@ -47,6 +47,38 @@ export function SettingsPage() {
     setTimeout(() => setSaveMessage(""), 3000);
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setIsSaving(true);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      setAvatarUrl(publicUrl);
+      await updateProfile({ avatar_url: publicUrl });
+      setSaveMessage("Avatar updated!");
+    } catch (error) {
+      console.error("Upload error:", error);
+      setSaveMessage("Upload failed.");
+    } finally {
+      setIsSaving(false);
+      setTimeout(() => setSaveMessage(""), 3000);
+    }
+  };
+
   const sections = [
     { id: "Profile", icon: User, label: "Profile Settings" },
     { id: "Notifications", icon: Bell, label: "Notifications" },
@@ -108,20 +140,23 @@ export function SettingsPage() {
                       name.charAt(0)
                     )}
                   </div>
-                  <button type="button" className="absolute -bottom-2 -right-2 p-2 bg-white rounded-lg shadow-md border border-slate-200 text-slate-600 hover:text-blue-600 transition-colors">
+                  <label className="absolute -bottom-2 -right-2 p-2 bg-white rounded-lg shadow-md border border-slate-200 text-slate-600 hover:text-blue-600 transition-colors cursor-pointer">
                     <Camera size={16} />
-                  </button>
+                    <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={isSaving} />
+                  </label>
                 </div>
                 <div className="space-y-1 text-center sm:text-left">
                   <h4 className="font-bold text-slate-800">Profile Picture</h4>
-                  <p className="text-xs text-slate-500 mb-3">JPG, GIF or PNG. Max size 2MB.</p>
-                  <input 
-                    type="text" 
-                    value={avatarUrl} 
-                    onChange={(e) => setAvatarUrl(e.target.value)} 
-                    placeholder="Paste Image URL"
-                    className="text-xs px-3 py-1.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-64"
-                  />
+                  <p className="text-xs text-slate-500 mb-3">Click the camera icon to upload an image.</p>
+                  <div className="flex flex-col gap-2">
+                    <input 
+                      type="text" 
+                      value={avatarUrl} 
+                      onChange={(e) => setAvatarUrl(e.target.value)} 
+                      placeholder="Or paste Image URL"
+                      className="text-xs px-3 py-1.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-64"
+                    />
+                  </div>
                 </div>
               </div>
 
