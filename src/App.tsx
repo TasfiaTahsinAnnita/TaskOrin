@@ -11,7 +11,7 @@ import { RoadmapPage } from "./pages/RoadmapPage";
 import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
 import { useAuthStore } from "./store/useAuthStore";
-import { LayoutDashboard, KanbanSquare, Table as TableIcon, Activity, ListTodo, Map, Settings } from "lucide-react";
+import { LayoutDashboard, KanbanSquare, Table as TableIcon, Activity, ListTodo, Map, Settings, BarChart3, LayoutGrid } from "lucide-react";
 import { GlobalSearch } from "./components/GlobalSearch";
 import { NotificationsDropdown } from "./components/NotificationsDropdown";
 import { supabase } from "./lib/supabase";
@@ -19,13 +19,13 @@ import { useEffect } from "react";
 import { useWorkStore } from "./store/useWorkStore";
 
 const navItems = [
-  { to: "/", label: "Projects", icon: LayoutDashboard },
-  { to: "/board", label: "Board", icon: KanbanSquare },
-  { to: "/scrum", label: "Scrum", icon: ListTodo },
+  { to: "/", label: "Projects", icon: LayoutGrid },
+  { to: "/board", label: "Kanban Board", icon: KanbanSquare },
+  { to: "/scrum", label: "Scrum & Sprint", icon: ListTodo },
   { to: "/roadmap", label: "Roadmap", icon: Map },
-  { to: "/activity", label: "Activity", icon: Activity },
-  { to: "/table", label: "Table", icon: TableIcon },
-  { to: "/reports", label: "Reports", icon: Activity }
+  { to: "/activity", label: "Global Activity", icon: Activity },
+  { to: "/table", label: "Data Table", icon: TableIcon },
+  { to: "/reports", label: "Analytics", icon: BarChart3 }
 ];
 
 export function App() {
@@ -157,7 +157,7 @@ export function App() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-auto p-8">
+        <div className="flex-1 overflow-auto p-8 pb-20">
           <Routes>
             <Route path="/" element={<ProjectsPage />} />
             <Route path="/board" element={<BoardPage />} />
@@ -170,6 +170,20 @@ export function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </div>
+
+        {/* Permanent Footer */}
+        <footer className="shrink-0 bg-white border-t border-slate-200 py-4 px-8 flex flex-col md:flex-row items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-widest bg-white/80 backdrop-blur-md">
+          <div className="flex items-center gap-2">
+            <span>&copy; {new Date().getFullYear()} TaskOrin</span>
+            <div className="w-1 h-1 rounded-full bg-slate-300" />
+            <span>Built by Tasfia Tahsin Annita</span>
+          </div>
+          <div className="flex items-center gap-6 mt-2 md:mt-0">
+            <a href="#" className="hover:text-blue-600 transition-colors">Privacy Policy</a>
+            <a href="#" className="hover:text-blue-600 transition-colors">Terms of Service</a>
+            <a href="#" className="hover:text-blue-600 transition-colors">Support</a>
+          </div>
+        </footer>
       </main>
     </div>
   );
