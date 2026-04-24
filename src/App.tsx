@@ -39,14 +39,25 @@ export function App() {
 
   useEffect(() => {
     console.log("Auth Initialization Started...");
-    const hasHash = window.location.hash.includes('access_token') || window.location.hash.includes('error');
+    const hasHash = window.location.hash.includes('access_token') || 
+                    window.location.hash.includes('error') ||
+                    window.location.hash.includes('id_token') ||
+                    window.location.search.includes('code=');
     
+    // Safety timeout: If initialization takes more than 10 seconds, force show the app
+    const safetyTimeout = setTimeout(() => {
+      if (!useAuthStore.getState().initialized) {
+        console.warn("Auth initialization timed out. Forcing ready state.");
+        setInitialized(true);
+      }
+    }, 8000);
+
     // Check current session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) console.error("Session Check Error:", error);
       
       if (session?.user) {
-        console.log("Session Found:", session.user.email);
+        console.log("Session Found on Init:", session.user.email);
         setUser({
           id: session.user.id,
           email: session.user.email || "",
@@ -56,15 +67,14 @@ export function App() {
         fetchInitialData();
         setInitialized(true);
       } else if (!hasHash) {
-        // Only set initialized if there's no hash to process
-        console.log("No Session Found, no hash detected");
+        console.log("No Session Found on Init, no hash detected");
         setInitialized(true);
       }
     });
 
     // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth State Changed:", event, session?.user?.email);
+      console.log("Auth Event:", event, "User:", session?.user?.email);
       
       if (session?.user) {
         setUser({
@@ -81,9 +91,17 @@ export function App() {
       } else if (event === 'INITIAL_SESSION' && !session && !hasHash) {
         setInitialized(true);
       }
+      
+      // If there's an error in the hash, we should stop waiting
+      if (window.location.hash.includes('error')) {
+        setInitialized(true);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(safetyTimeout);
+    };
   }, [setUser, setInitialized, fetchInitialData]);
 
   const handleLogout = async () => {
