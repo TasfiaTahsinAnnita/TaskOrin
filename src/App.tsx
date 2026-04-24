@@ -30,6 +30,7 @@ const navItems = [
 
 export function App() {
   const user = useAuthStore((state) => state.user);
+  const profile = useAuthStore((state) => state.profile);
   const setUser = useAuthStore((state) => state.setUser);
   const fetchInitialData = useWorkStore((state) => state.fetchInitialData);
   const location = useLocation();
@@ -84,8 +85,17 @@ export function App() {
     <div className="min-h-screen flex bg-slate-50 text-slate-900 font-sans">
       <aside className="w-64 bg-slate-900 text-slate-200 flex flex-col transition-all duration-300 shadow-xl">
         <div className="p-6 border-b border-slate-800">
-          <h1 className="text-xl font-bold text-white mb-1 tracking-tight">ProjectFlow</h1>
-          <p className="text-sm text-slate-400">Welcome, {user.name}</p>
+          <div className="flex items-center gap-3 mb-1">
+             <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg overflow-hidden">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  "P"
+                )}
+             </div>
+             <h1 className="text-xl font-bold text-white tracking-tight">TaskOrin</h1>
+          </div>
+          <p className="text-xs text-slate-400 font-medium">Workspace: {profile?.full_name || user.name}</p>
         </div>
         <nav className="flex-1 px-4 py-6 space-y-2">
           {navItems.map((item) => {
@@ -97,7 +107,7 @@ export function App() {
                 end={item.to === "/"}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                    isActive ? "bg-blue-600 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                    isActive ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" : "text-slate-300 hover:bg-slate-800 hover:text-white"
                   }`
                 }
               >
@@ -110,22 +120,22 @@ export function App() {
         <div className="p-4 border-t border-slate-800">
           <button 
             type="button" 
-            className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm font-medium" 
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-800 text-slate-300 hover:bg-rose-600 hover:text-white transition-all text-sm font-bold" 
             onClick={handleLogout}
           >
-            Logout
+            Logout Session
           </button>
         </div>
       </aside>
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 shrink-0 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-50">
+        <header className="h-16 shrink-0 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-50 shadow-sm">
           <GlobalSearch />
           <div className="flex items-center gap-4">
             <NotificationsDropdown />
             <NavLink 
               to="/settings"
               className={({ isActive }) => 
-                `p-2 rounded-lg transition-colors ${isActive ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`
+                `p-2 rounded-xl transition-all ${isActive ? 'bg-blue-50 text-blue-600 shadow-inner' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`
               }
             >
               <Settings size={20} />
@@ -133,11 +143,15 @@ export function App() {
             <div className="h-8 w-px bg-slate-200 mx-1"></div>
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
-                <div className="text-sm font-bold text-slate-800 leading-none">{user.name}</div>
-                <div className="text-[10px] font-bold text-blue-600 uppercase tracking-tighter mt-1">Admin Account</div>
+                <div className="text-sm font-bold text-slate-800 leading-none">{profile?.full_name || user.name}</div>
+                <div className="text-[10px] font-bold text-blue-600 uppercase tracking-tighter mt-1">{profile?.role || "Admin Account"}</div>
               </div>
-              <NavLink to="/settings" className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold border-2 border-white shadow-sm ring-1 ring-slate-200 hover:ring-blue-400 transition-all">
-                {user.name.charAt(0)}
+              <NavLink to="/settings" className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold border-2 border-white shadow-md ring-1 ring-slate-200 hover:ring-blue-400 transition-all overflow-hidden">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  user.name.charAt(0)
+                )}
               </NavLink>
             </div>
           </div>
