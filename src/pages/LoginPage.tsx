@@ -29,10 +29,11 @@ export function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
+    const origin = window.location.origin;
     const { error: googleError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: origin.endsWith('/') ? origin : `${origin}/`,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
