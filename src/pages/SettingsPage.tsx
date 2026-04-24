@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { User, Bell, Shield, Palette, Globe, Save, LogOut } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
+import { supabase } from "../lib/supabase";
 
 export function SettingsPage() {
   const { user, setUser } = useAuthStore();

@@ -6,12 +6,10 @@ import {
   PieChart, Pie, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from "recharts";
 import { Download, LayoutDashboard, FolderKanban, Timer, Users, Activity, Calendar } from "lucide-react";
-import { format, parseISO, startOfDay, endOfDay, eachDayOfInterval, subDays } from "date-fns";
+import { format } from "date-fns";
 
 type Tab = "Global" | "Project" | "Sprint" | "Member";
 type DateFilter = "7D" | "30D" | "ALL";
-
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
 export function ReportsPage() {
   const { tasks, projects, sprints, activeProjectId } = useWorkStore();
