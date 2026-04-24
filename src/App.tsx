@@ -38,9 +38,14 @@ export function App() {
   const location = useLocation();
 
   useEffect(() => {
+    console.log("Auth Initialization Started...");
+    
     // Check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) console.error("Session Check Error:", error);
+      
       if (session?.user) {
+        console.log("Session Found:", session.user.email);
         setUser({
           id: session.user.id,
           email: session.user.email || "",
@@ -48,12 +53,16 @@ export function App() {
           avatar_url: session.user.user_metadata.avatar_url
         });
         fetchInitialData();
+      } else {
+        console.log("No Session Found");
       }
       setInitialized(true);
     });
 
     // Listen for changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth State Changed:", event, session?.user?.email);
+      
       if (session?.user) {
         setUser({
           id: session.user.id,
