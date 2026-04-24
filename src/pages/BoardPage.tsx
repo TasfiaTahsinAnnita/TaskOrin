@@ -107,6 +107,18 @@ export function BoardPage() {
     event.preventDefault();
     if (!activeProjectId) return;
     
+    const newTask: TaskCard = {
+      id: `PM-${Math.floor(200 + Math.random() * 700)}`,
+      title: title.trim(),
+      assignee,
+      priority,
+      points: 3, // Default points
+      description: description.trim(),
+      dueDate: new Date().toISOString().split('T')[0],
+      labels: [],
+      comments: [],
+      status: "backlog",
+      projectId: activeProjectId,
       activity: [{ id: Math.random().toString(), action: "Task created", timestamp: new Date().toISOString(), user: "System" }]
     };
 
