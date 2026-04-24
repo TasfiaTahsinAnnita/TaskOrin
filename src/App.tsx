@@ -39,6 +39,7 @@ export function App() {
 
   useEffect(() => {
     console.log("Auth Initialization Started...");
+    const hasHash = window.location.hash.includes('access_token') || window.location.hash.includes('error');
     
     // Check current session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
@@ -53,10 +54,12 @@ export function App() {
           avatar_url: session.user.user_metadata.avatar_url
         });
         fetchInitialData();
-      } else {
-        console.log("No Session Found");
+        setInitialized(true);
+      } else if (!hasHash) {
+        // Only set initialized if there's no hash to process
+        console.log("No Session Found, no hash detected");
+        setInitialized(true);
       }
-      setInitialized(true);
     });
 
     // Listen for changes
@@ -71,10 +74,13 @@ export function App() {
           avatar_url: session.user.user_metadata.avatar_url
         });
         fetchInitialData();
-      } else {
+        setInitialized(true);
+      } else if (event === 'SIGNED_OUT') {
         setUser(null);
+        setInitialized(true);
+      } else if (event === 'INITIAL_SESSION' && !session && !hasHash) {
+        setInitialized(true);
       }
-      setInitialized(true);
     });
 
     return () => subscription.unsubscribe();
