@@ -12,7 +12,9 @@ export type Profile = {
 type AuthState = {
   user: { id: string; email: string; name: string; avatar_url?: string } | null;
   profile: Profile | null;
+  initialized: boolean;
   setUser: (user: AuthState["user"]) => void;
+  setInitialized: (initialized: boolean) => void;
   fetchProfile: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
 };
@@ -20,6 +22,7 @@ type AuthState = {
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   profile: null,
+  initialized: false,
   
   setUser: (user) => {
     set({ user });
@@ -29,6 +32,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ profile: null });
     }
   },
+
+  setInitialized: (initialized) => set({ initialized }),
 
   fetchProfile: async () => {
     const user = get().user;

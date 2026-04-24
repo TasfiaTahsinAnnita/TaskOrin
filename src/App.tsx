@@ -31,7 +31,9 @@ const navItems = [
 export function App() {
   const user = useAuthStore((state) => state.user);
   const profile = useAuthStore((state) => state.profile);
+  const initialized = useAuthStore((state) => state.initialized);
   const setUser = useAuthStore((state) => state.setUser);
+  const setInitialized = useAuthStore((state) => state.setInitialized);
   const fetchInitialData = useWorkStore((state) => state.fetchInitialData);
   const location = useLocation();
 
@@ -47,6 +49,7 @@ export function App() {
         });
         fetchInitialData();
       }
+      setInitialized(true);
     });
 
     // Listen for changes
@@ -62,14 +65,26 @@ export function App() {
       } else {
         setUser(null);
       }
+      setInitialized(true);
     });
 
     return () => subscription.unsubscribe();
-  }, [setUser, fetchInitialData]);
+  }, [setUser, setInitialized, fetchInitialData]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
+
+  if (!initialized) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-blue-200 font-bold tracking-widest uppercase text-xs">Initializing Workspace...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
