@@ -5,7 +5,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-
 import { CSS } from "@dnd-kit/utilities";
 import type { TaskCard } from "../store/useWorkStore";
 import { useWorkStore } from "../store/useWorkStore";
-import { Plus, X, Search, Clock, User, Filter, LayoutTemplate, Trash2, Paperclip, MessageSquare, ListTodo, MoreVertical } from "lucide-react";
+import { Plus, X, Search, Clock, User, Filter, LayoutTemplate, Trash2, Paperclip, MessageSquare, ListTodo } from "lucide-react";
 import { format } from "date-fns";
 
 export function BoardPage() {
@@ -23,12 +23,7 @@ export function BoardPage() {
   const [title, setTitle] = useState("");
   const [assignee, setAssignee] = useState("Aisha");
   const [priority, setPriority] = useState<TaskCard["priority"]>("Medium");
-  const [points, setPoints] = useState("3");
-  const [targetColumnId, setTargetColumnId] = useState("backlog");
   const [description, setDescription] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [labelsInput, setLabelsInput] = useState("");
-  
   const [searchQuery, setSearchQuery] = useState("");
   const [assigneeFilter, setAssigneeFilter] = useState("All");
   const [selectedTask, setSelectedTask] = useState<TaskCard | null>(null);
@@ -112,20 +107,6 @@ export function BoardPage() {
     event.preventDefault();
     if (!activeProjectId) return;
     
-    const key = `PM-${Math.floor(200 + Math.random() * 700)}`;
-    const newTask: TaskCard = {
-      id: key,
-      title: title.trim(),
-      assignee,
-      priority,
-      points: Number(points),
-      description: description.trim(),
-      dueDate,
-      labels: labelsInput.split(",").map((value) => value.trim()).filter(Boolean),
-      comments: [],
-      status: targetColumnId,
-      projectId: activeProjectId,
-      sprintId: (showActiveSprintOnly && activeSprint) ? activeSprint.id : undefined,
       activity: [{ id: Math.random().toString(), action: "Task created", timestamp: new Date().toISOString(), user: "System" }]
     };
 
@@ -208,8 +189,8 @@ export function BoardPage() {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm shrink-0">
           <form className="flex flex-col gap-4" onSubmit={handleCreateTask}>
             <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-2">Quick Add Task</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="md:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-1">
                 <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Task title" required className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
               </div>
               <select value={assignee} onChange={(e) => setAssignee(e.target.value)} className="px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white">

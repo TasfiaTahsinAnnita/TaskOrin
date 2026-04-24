@@ -56,7 +56,7 @@ export function ActivityPage() {
             <div className="space-y-8 relative">
               <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-slate-100" />
               
-              {allActivity.map((log, i) => (
+              {allActivity.map((log) => (
                 <div key={log.id} className="relative flex gap-6 group">
                   <div className="relative z-10 w-6 h-6 rounded-full bg-white border-2 border-slate-200 flex items-center justify-center group-hover:border-blue-500 transition-colors">
                     {getIcon(log.action)}

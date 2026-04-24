@@ -3,7 +3,11 @@ import { User, Bell, Shield, Palette, Globe, Save, LogOut } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 
 export function SettingsPage() {
-  const { user, logout } = useAuthStore();
+  const { user, setUser } = useAuthStore();
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [theme, setTheme] = useState("System");
@@ -38,7 +42,8 @@ export function SettingsPage() {
           ))}
           <div className="pt-4 mt-4 border-t border-slate-200">
             <button 
-              onClick={logout}
+              type="button" 
+              onClick={handleLogout}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors"
             >
               <LogOut size={18} />

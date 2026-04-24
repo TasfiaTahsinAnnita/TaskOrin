@@ -3,8 +3,7 @@ import { useWorkStore, TaskCard, Sprint } from "../store/useWorkStore";
 import { DndContext, DragEndEvent, useDroppable, useSensor, useSensors, PointerSensor, closestCorners } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Plus, Play, CheckCircle2, MoreVertical, Calendar } from "lucide-react";
-import { format } from "date-fns";
+import { Timer, CheckCircle2, AlertCircle, TrendingUp, Users, Plus, Play, CheckCircle2 as CheckIcon, MoreVertical } from "lucide-react";
 
 export function ScrumPage() {
   const { tasks, sprints, activeProjectId, updateTaskSprint, createSprint, startSprint, completeSprint } = useWorkStore();

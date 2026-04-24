@@ -6,7 +6,7 @@ import {
   PieChart, Pie, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from "recharts";
 import { Download, LayoutDashboard, FolderKanban, Timer, Users, Activity, Calendar } from "lucide-react";
-import { format, differenceInDays } from "date-fns";
+import { format, parseISO, startOfDay, endOfDay, eachDayOfInterval, subDays } from "date-fns";
 
 type Tab = "Global" | "Project" | "Sprint" | "Member";
 type DateFilter = "7D" | "30D" | "ALL";
@@ -41,7 +41,7 @@ export function ReportsPage() {
         t.sprintId || "", 
         t.completedAt || ""
       ].join(","))
-    ].join("\\n");
+    ].join("\n");
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -290,7 +290,7 @@ function ProjectDashboard({ tasks, dateFilter }: { tasks: TaskCard[], dateFilter
           <div className="h-64 w-full flex justify-center items-center">
             {priorityData.length > 0 ? (
               <PieChart width={300} height={250}>
-                <Pie data={priorityData} cx="50%" cy="50%" innerRadius={0} outerRadius={80} paddingAngle={2} dataKey="value" label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
+                <Pie data={priorityData} cx="50%" cy="50%" innerRadius={0} outerRadius={80} paddingAngle={2} dataKey="value" label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}>
                   {priorityData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}

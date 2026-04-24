@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { useWorkStore, Project, Sprint } from "../store/useWorkStore";
-import { format, differenceInDays, addDays, startOfMonth, endOfMonth, min, max, isValid, startOfDay } from "date-fns";
-import { Calendar as CalendarIcon, ChevronRight, ChevronDown, Map, Plus } from "lucide-react";
+import { useWorkStore } from "../store/useWorkStore";
+import { format, differenceInDays, addDays, startOfMonth, endOfMonth, isValid, startOfDay } from "date-fns";
+import { Calendar as CalendarIcon, ChevronRight, ChevronDown, Map } from "lucide-react";
 
 type ZoomLevel = "Weeks" | "Months";
 

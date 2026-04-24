@@ -11,7 +11,7 @@ import { RoadmapPage } from "./pages/RoadmapPage";
 import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
 import { useAuthStore } from "./store/useAuthStore";
-import { LayoutDashboard, KanbanSquare, Table as TableIcon, Activity, ListTodo, Map, Bell, Settings } from "lucide-react";
+import { LayoutDashboard, KanbanSquare, Table as TableIcon, Activity, ListTodo, Map, Settings } from "lucide-react";
 import { GlobalSearch } from "./components/GlobalSearch";
 import { NotificationsDropdown } from "./components/NotificationsDropdown";
 import { supabase } from "./lib/supabase";

@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { useWorkStore, Project } from "../store/useWorkStore";
+import { useWorkStore } from "../store/useWorkStore";
 import { Plus, Users, LayoutList, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 

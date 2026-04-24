@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Bell, Check, Info, AlertTriangle, X } from "lucide-react";
+import { Bell, Check, Info, AlertTriangle } from "lucide-react";
 
 type Notification = {
   id: string;

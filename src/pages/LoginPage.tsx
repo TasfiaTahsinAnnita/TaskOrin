@@ -1,4 +1,3 @@
-import { useAuthStore } from "../store/useAuthStore";
 import { useNavigate, Link } from "react-router-dom";
 import { FormEvent, useState } from "react";
 import { supabase } from "../lib/supabase";
