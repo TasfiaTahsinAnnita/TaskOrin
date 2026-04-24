@@ -1,27 +1,13 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { supabase } from "../lib/supabase";
 
-export type User = {
+export type Profile = {
   id: string;
-  name: string;
-  email: string;
-  avatar_url?: string;
+  full_name: string;
+  avatar_url: string;
+  bio: string;
+  role: string;
 };
 
 type AuthState = {
-  user: User | null;
-  setUser: (user: User | null) => void;
-};
-
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      setUser: (user) => set({ user }),
-    }),
-    {
-      name: "pm-auth-store",
-    }
-  )
-);
 
