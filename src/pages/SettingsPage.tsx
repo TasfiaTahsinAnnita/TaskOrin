@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { User, Bell, Shield, Palette, Globe, Save, LogOut, Camera, Mail, Briefcase, Info } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { supabase } from "../lib/supabase";
 
 export function SettingsPage() {
   const { user, profile, setUser, updateProfile } = useAuthStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -140,10 +141,21 @@ export function SettingsPage() {
                       name.charAt(0)
                     )}
                   </div>
-                  <label className="absolute -bottom-2 -right-2 p-2 bg-white rounded-lg shadow-md border border-slate-200 text-slate-600 hover:text-blue-600 transition-colors cursor-pointer">
+                  <button 
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute -bottom-2 -right-2 p-2 bg-white rounded-lg shadow-md border border-slate-200 text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
+                  >
                     <Camera size={16} />
-                    <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={isSaving} />
-                  </label>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef}
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={handleAvatarUpload} 
+                      disabled={isSaving} 
+                    />
+                  </button>
                 </div>
                 <div className="space-y-1 text-center sm:text-left">
                   <h4 className="font-bold text-slate-800">Profile Picture</h4>
