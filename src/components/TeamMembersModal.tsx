@@ -225,9 +225,13 @@ export function TeamMembersModal({ isOpen, onClose, projectId }: Props) {
                     {member.role !== "Owner" && (
                       <button
                         type="button"
-                        onClick={() => removeTeamMember(member.id)}
-                        className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors opacity-0 group-hover:opacity-100"
-                        title="Remove member"
+                        onClick={() => {
+                          if (confirm(`Are you sure you want to remove ${member.name} (${member.email}) from this project?`)) {
+                            removeTeamMember(member.id);
+                          }
+                        }}
+                        className="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 p-2 rounded-lg transition-colors border border-rose-200 shrink-0"
+                        title="Delete member from project"
                       >
                         <Trash2 size={16} />
                       </button>

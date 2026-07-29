@@ -129,13 +129,13 @@ export const useWorkStore = create<WorkState>((set, get) => ({
     set({ isLoading: true });
 
     const [projectsRes, sprintsRes, tasksRes, membersRes] = await Promise.all([
-      supabase.from('projects').select('*').eq('user_id', user.id),
+      supabase.from('projects').select('*'),
       supabase.from('sprints').select('*'),
       supabase.from('tasks').select('*, activity_logs(*)'),
       supabase.from('team_members').select('*')
     ]);
 
-    const projects = (projectsRes.data || []).map(p => ({
+    const allDbProjects = (projectsRes.data || []).map(p => ({
       id: p.id,
       name: p.name,
       workspaceId: p.workspace_id,
@@ -143,7 +143,8 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       members: p.members,
       columns: p.columns || [],
       startDate: p.start_date,
-      endDate: p.end_date
+      endDate: p.end_date,
+      creatorId: p.user_id
     }));
 
     const sprints = (sprintsRes.data || []).map(s => ({
@@ -201,6 +202,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
         avatarUrl: m.avatar_url,
         status: m.status || "Active",
         invitedAt: m.invited_at,
+        invitedBy: m.invited_by,
         projectId: m.project_id
       }));
     } else {
@@ -220,7 +222,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
     membersMap.set(ownerMember.email.toLowerCase(), ownerMember);
 
     dbMembers.forEach((m) => {
-      const key = m.email.toLowerCase();
+      const key = `${m.email.toLowerCase()}_${m.projectId || 'global'}`;
       if (!membersMap.has(key)) {
         membersMap.set(key, m);
       }
@@ -228,12 +230,26 @@ export const useWorkStore = create<WorkState>((set, get) => ({
 
     const combinedMembers = Array.from(membersMap.values());
 
+    // Include projects where user is owner or invited member
+    const userMemberProjectIds = new Set(
+      combinedMembers
+        .filter(m => m.email.toLowerCase() === user.email.toLowerCase())
+        .map(m => m.projectId)
+        .filter(Boolean)
+    );
+
+    const userProjects = allDbProjects.length > 0
+      ? allDbProjects.filter(p => p.creatorId === user.id || userMemberProjectIds.has(p.id))
+      : get().projects;
+
+    const visibleProjects = userProjects.length > 0 ? userProjects : get().projects;
+
     set({ 
-      projects, 
+      projects: visibleProjects, 
       sprints, 
       tasks, 
       teamMembers: combinedMembers,
-      activeProjectId: projects[0]?.id || null,
+      activeProjectId: get().activeProjectId || visibleProjects[0]?.id || null,
       isLoading: false 
     });
   },
