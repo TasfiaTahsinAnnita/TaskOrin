@@ -45,6 +45,7 @@ export type Project = {
   columns: BoardColumn[];
   startDate?: string;
   endDate?: string;
+  creatorId?: string;
 };
 
 export type Sprint = {
