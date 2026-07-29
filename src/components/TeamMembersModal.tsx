@@ -192,10 +192,31 @@ export function TeamMembersModal({ isOpen, onClose, projectId }: Props) {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      Active
-                    </span>
+                    {member.status === "Pending" ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const link = `${window.location.origin}/?invite_id=${member.id}&invited_by=${encodeURIComponent(member.invitedBy || "Admin")}&member_name=${encodeURIComponent(member.name)}&email=${encodeURIComponent(member.email)}&role=${encodeURIComponent(member.role)}`;
+                            navigator.clipboard.writeText(link);
+                            alert(`Invite link copied to clipboard!\n\n${link}`);
+                          }}
+                          className="text-[11px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg border border-blue-200 transition-colors"
+                          title="Copy direct invitation link"
+                        >
+                          Copy Link
+                        </button>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                          Pending Invite
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        Active
+                      </span>
+                    )}
 
                     {member.role !== "Owner" && (
                       <button

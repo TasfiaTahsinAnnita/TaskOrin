@@ -44,7 +44,7 @@ export function TablePage() {
             onChange={(e) => updateTask(info.row.original.id, (t) => ({ ...t, assignee: e.target.value }))}
             className="bg-transparent border-0 text-sm font-medium focus:ring-0 cursor-pointer hover:bg-slate-100 rounded px-1 -ml-1"
           >
-            {teamMembers.map((m) => (
+            {teamMembers.filter(m => m.status === "Active").map((m) => (
               <option key={m.id} value={m.name}>
                 {m.name}
               </option>

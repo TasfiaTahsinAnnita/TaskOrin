@@ -14,6 +14,7 @@ import { useAuthStore } from "./store/useAuthStore";
 import { KanbanSquare, Table as TableIcon, Activity, ListTodo, Map, Settings, BarChart3, LayoutGrid } from "lucide-react";
 import { GlobalSearch } from "./components/GlobalSearch";
 import { NotificationsDropdown } from "./components/NotificationsDropdown";
+import { InviteAcceptModal } from "./components/InviteAcceptModal";
 import { supabase } from "./lib/supabase";
 import { useEffect } from "react";
 import { useWorkStore } from "./store/useWorkStore";
@@ -136,6 +137,7 @@ export function App() {
 
   return (
     <div className="min-h-screen flex bg-slate-50 text-slate-900 font-sans">
+      <InviteAcceptModal />
       <aside className="w-64 bg-slate-900 text-slate-200 flex flex-col transition-all duration-300 shadow-xl">
         <div className="p-6 border-b border-slate-800">
           <div className="flex items-center gap-3 mb-1">

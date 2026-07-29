@@ -228,7 +228,7 @@ export function BoardPage() {
                   onChange={(e) => setAssignee(e.target.value)} 
                   className="flex-1 px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white font-medium text-slate-700"
                 >
-                  {teamMembers.map((m) => (
+                  {teamMembers.filter(m => m.status === "Active").map((m) => (
                     <option key={m.id} value={m.name}>
                       {m.name} ({m.role})
                     </option>

@@ -65,6 +65,7 @@ export type TeamMember = {
   avatarUrl?: string;
   status: "Active" | "Pending";
   invitedAt?: string;
+  invitedBy?: string;
   projectId?: string;
 };
 
@@ -101,6 +102,7 @@ type WorkState = {
   addAttachment: (taskId: string, fileName: string) => Promise<void>;
   
   inviteTeamMember: (member: { name: string; email: string; role?: "Owner" | "Admin" | "Member"; projectId?: string }) => Promise<TeamMember>;
+  acceptTeamMember: (memberId: string) => Promise<void>;
   removeTeamMember: (memberId: string) => Promise<void>;
 
   deleteTask: (taskId: string) => Promise<void>;
@@ -239,24 +241,32 @@ export const useWorkStore = create<WorkState>((set, get) => ({
   inviteTeamMember: async ({ name, email, role = "Member", projectId }) => {
     const cleanEmail = email.trim().toLowerCase();
     const cleanName = name.trim();
+    const inviterName = useAuthStore.getState().user?.name || "Workspace Admin";
 
     const newMember: TeamMember = {
       id: `tm-${Math.random().toString(36).substring(2, 9)}`,
       name: cleanName,
       email: cleanEmail,
       role: role,
-      status: "Active",
+      status: "Pending",
       invitedAt: new Date().toISOString(),
+      invitedBy: inviterName,
       projectId: projectId || get().activeProjectId || undefined
     };
 
-    // Send real invitation email with magic link via Supabase Auth
+    const inviteLink = `${window.location.origin}/?invite_id=${newMember.id}&invited_by=${encodeURIComponent(inviterName)}&member_name=${encodeURIComponent(cleanName)}&email=${encodeURIComponent(cleanEmail)}&role=${encodeURIComponent(role)}`;
+
+    // Send real invitation email with magic link & custom redirect URL via Supabase Auth
     try {
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email: cleanEmail,
         options: {
-          data: { full_name: cleanName },
-          emailRedirectTo: `${window.location.origin}/`
+          data: { 
+            full_name: cleanName,
+            invited_by: inviterName,
+            invite_id: newMember.id
+          },
+          emailRedirectTo: inviteLink
         }
       });
       if (otpError) {
@@ -275,6 +285,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
         role: newMember.role,
         status: newMember.status,
         invited_at: newMember.invitedAt,
+        invited_by: newMember.invitedBy,
         project_id: newMember.projectId
       });
     } catch (e) {
@@ -292,6 +303,23 @@ export const useWorkStore = create<WorkState>((set, get) => ({
     }
 
     return newMember;
+  },
+
+  acceptTeamMember: async (memberId: string) => {
+    try {
+      await supabase.from('team_members').update({ status: "Active" }).eq('id', memberId);
+    } catch (e) {
+      console.warn("Supabase update team_members bypassed:", e);
+    }
+
+    const updatedMembers = get().teamMembers.map(m => m.id === memberId ? { ...m, status: "Active" as const } : m);
+    set({ teamMembers: updatedMembers });
+
+    try {
+      localStorage.setItem(TEAM_MEMBERS_STORAGE_KEY, JSON.stringify(updatedMembers));
+    } catch (e) {
+      console.error("Error updating localStorage after accepting team member:", e);
+    }
   },
 
   removeTeamMember: async (memberId: string) => {
