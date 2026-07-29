@@ -100,7 +100,7 @@ type WorkState = {
   updateTaskSprint: (taskId: string, sprintId: string | null) => Promise<void>;
   addAttachment: (taskId: string, fileName: string) => Promise<void>;
   
-  inviteTeamMember: (member: { name: string; email: string; role?: "Admin" | "Member"; projectId?: string }) => Promise<TeamMember>;
+  inviteTeamMember: (member: { name: string; email: string; role?: "Owner" | "Admin" | "Member"; projectId?: string }) => Promise<TeamMember>;
   removeTeamMember: (memberId: string) => Promise<void>;
 
   deleteTask: (taskId: string) => Promise<void>;

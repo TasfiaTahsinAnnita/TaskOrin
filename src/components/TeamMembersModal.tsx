@@ -1,6 +1,6 @@
 import { useState, FormEvent } from "react";
-import { useWorkStore, TeamMember } from "../store/useWorkStore";
-import { X, UserPlus, Mail, Shield, Trash2, CheckCircle2, UserCheck, Sparkles } from "lucide-react";
+import { useWorkStore } from "../store/useWorkStore";
+import { X, UserPlus, Mail, Trash2, CheckCircle2, UserCheck, Sparkles } from "lucide-react";
 
 type Props = {
   isOpen: boolean;
