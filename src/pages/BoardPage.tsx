@@ -5,11 +5,12 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-
 import { CSS } from "@dnd-kit/utilities";
 import type { TaskCard } from "../store/useWorkStore";
 import { useWorkStore } from "../store/useWorkStore";
-import { Plus, X, Search, Clock, User, Filter, LayoutTemplate, Trash2, Paperclip, MessageSquare, ListTodo } from "lucide-react";
+import { Plus, X, Search, Clock, User, Filter, LayoutTemplate, Trash2, Paperclip, MessageSquare, ListTodo, UserPlus } from "lucide-react";
 import { format } from "date-fns";
+import { TeamMembersModal } from "../components/TeamMembersModal";
 
 export function BoardPage() {
-  const { tasks, projects, sprints, activeProjectId, updateTask, moveTaskStatus, createTask, addActivity, deleteTask } = useWorkStore();
+  const { tasks, projects, sprints, teamMembers, activeProjectId, updateTask, moveTaskStatus, createTask, addActivity, deleteTask } = useWorkStore();
   
   const project = useMemo(() => projects.find(p => p.id === activeProjectId), [projects, activeProjectId]);
   const columns = project?.columns || [];
@@ -20,14 +21,18 @@ export function BoardPage() {
   const [groupBy, setGroupBy] = useState<"None" | "Assignee" | "Priority">("None");
   
   const [showTaskForm, setShowTaskForm] = useState(false);
+  const [showTeamModal, setShowTeamModal] = useState(false);
   const [title, setTitle] = useState("");
-  const [assignee, setAssignee] = useState("Aisha");
+  const [assignee, setAssignee] = useState("");
   const [priority, setPriority] = useState<TaskCard["priority"]>("Medium");
   const [description, setDescription] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [assigneeFilter, setAssigneeFilter] = useState("All");
   const [selectedTask, setSelectedTask] = useState<TaskCard | null>(null);
   const [commentInput, setCommentInput] = useState("");
+
+  // Select first team member name by default if not manually set
+  const activeAssignee = assignee || teamMembers[0]?.name || "Unassigned";
 
   const projectTasksRaw = useMemo(() => tasks.filter(t => t.projectId === activeProjectId), [tasks, activeProjectId]);
   
@@ -46,9 +51,10 @@ export function BoardPage() {
 
   const assigneesList = useMemo(() => {
     const set = new Set<string>();
+    teamMembers.forEach(m => set.add(m.name));
     projectTasksRaw.forEach((task) => set.add(task.assignee));
     return ["All", ...Array.from(set)];
-  }, [projectTasksRaw]);
+  }, [teamMembers, projectTasksRaw]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -187,6 +193,15 @@ export function BoardPage() {
         <div className="flex items-center gap-3">
           <button 
             type="button" 
+            className="flex items-center gap-2 bg-slate-800 text-white px-3.5 py-2 rounded-lg hover:bg-slate-700 font-medium text-sm transition-colors shadow-sm" 
+            onClick={() => setShowTeamModal(true)}
+          >
+            <UserPlus size={16} />
+            Manage Team ({teamMembers.length})
+          </button>
+
+          <button 
+            type="button" 
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors shadow-sm" 
             onClick={() => setShowTaskForm(!showTaskForm)}
           >
@@ -196,7 +211,8 @@ export function BoardPage() {
         </div>
       </header>
 
-      {/* Task Form logic omitted for brevity, keeping existing implementation */}
+      <TeamMembersModal isOpen={showTeamModal} onClose={() => setShowTeamModal(false)} />
+
       {showTaskForm && (
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm shrink-0">
           <form className="flex flex-col gap-4" onSubmit={handleCreateTask}>
@@ -205,16 +221,33 @@ export function BoardPage() {
               <div className="md:col-span-1">
                 <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Task title" required className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
               </div>
-              <select value={assignee} onChange={(e) => setAssignee(e.target.value)} className="px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white">
-                <option>Aisha</option>
-                <option>Ravi</option>
-                <option>Nina</option>
-                <option>Karan</option>
-              </select>
+
+              <div className="flex items-center gap-1.5">
+                <select 
+                  value={activeAssignee} 
+                  onChange={(e) => setAssignee(e.target.value)} 
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white font-medium text-slate-700"
+                >
+                  {teamMembers.map((m) => (
+                    <option key={m.id} value={m.name}>
+                      {m.name} ({m.role})
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowTeamModal(true)}
+                  className="p-2 bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors border border-slate-200"
+                  title="Invite new team member"
+                >
+                  <UserPlus size={16} />
+                </button>
+              </div>
+
               <select value={priority} onChange={(e) => setPriority(e.target.value as TaskCard["priority"])} className="px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white">
-                <option>Low</option>
-                <option>Medium</option>
-                <option>High</option>
+                <option value="Low">Low Priority</option>
+                <option value="Medium">Medium Priority</option>
+                <option value="High">High Priority</option>
               </select>
             </div>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description..." rows={2} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm resize-y" />

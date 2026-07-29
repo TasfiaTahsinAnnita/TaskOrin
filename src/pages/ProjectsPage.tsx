@@ -1,16 +1,19 @@
 import { FormEvent, useState } from "react";
 import { useWorkStore } from "../store/useWorkStore";
-import { Plus, Users, LayoutList, Trash2 } from "lucide-react";
+import { Plus, Users, LayoutList, Trash2, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { TeamMembersModal } from "../components/TeamMembersModal";
 
 export function ProjectsPage() {
   const projects = useWorkStore((state) => state.projects);
+  const teamMembers = useWorkStore((state) => state.teamMembers);
   const createProject = useWorkStore((state) => state.createProject);
   const deleteProject = useWorkStore((state) => state.deleteProject);
   const activeWorkspaceId = useWorkStore((state) => state.activeWorkspaceId);
   const setActiveProject = useWorkStore((state) => state.setActiveProject);
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
+  const [showTeamModal, setShowTeamModal] = useState(false);
   const [name, setName] = useState("");
   const [members, setMembers] = useState("5");
   const [startDate, setStartDate] = useState("");
@@ -25,7 +28,7 @@ export function ProjectsPage() {
       name: name.trim(),
       workspaceId: activeWorkspaceId,
       progress: 0,
-      members: Number(members),
+      members: Number(members) || teamMembers.length || 1,
       startDate: startDate ? new Date(startDate).toISOString() : undefined,
       endDate: endDate ? new Date(endDate).toISOString() : undefined,
       columns: [
@@ -44,20 +47,33 @@ export function ProjectsPage() {
 
   return (
     <section className="space-y-6">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Projects</h2>
-          <p className="text-sm text-slate-500">Manage all your projects and their progress.</p>
+          <p className="text-sm text-slate-500">Manage all your projects, progress, and team members.</p>
         </div>
-        <button 
-          type="button" 
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium"
-          onClick={() => setShowModal(true)}
-        >
-          <Plus size={18} />
-          New Project
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            type="button" 
+            className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2.5 rounded-lg hover:bg-slate-700 transition-colors shadow-sm font-medium text-sm"
+            onClick={() => setShowTeamModal(true)}
+          >
+            <UserPlus size={18} />
+            Manage Team ({teamMembers.length})
+          </button>
+
+          <button 
+            type="button" 
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm"
+            onClick={() => setShowModal(true)}
+          >
+            <Plus size={18} />
+            New Project
+          </button>
+        </div>
       </header>
+
+      <TeamMembersModal isOpen={showTeamModal} onClose={() => setShowTeamModal(false)} />
 
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">

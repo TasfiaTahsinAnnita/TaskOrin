@@ -57,6 +57,17 @@ export type Sprint = {
   goal?: string;
 };
 
+export type TeamMember = {
+  id: string;
+  name: string;
+  email: string;
+  role: "Owner" | "Admin" | "Member";
+  avatarUrl?: string;
+  status: "Active" | "Pending";
+  invitedAt?: string;
+  projectId?: string;
+};
+
 export type Workspace = {
   id: string;
   name: string;
@@ -69,6 +80,7 @@ type WorkState = {
   activeProjectId: string | null;
   tasks: TaskCard[];
   sprints: Sprint[];
+  teamMembers: TeamMember[];
   isLoading: boolean;
 
   // Actions
@@ -88,10 +100,15 @@ type WorkState = {
   updateTaskSprint: (taskId: string, sprintId: string | null) => Promise<void>;
   addAttachment: (taskId: string, fileName: string) => Promise<void>;
   
+  inviteTeamMember: (member: { name: string; email: string; role?: "Admin" | "Member"; projectId?: string }) => Promise<TeamMember>;
+  removeTeamMember: (memberId: string) => Promise<void>;
+
   deleteTask: (taskId: string) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
   deleteSprint: (sprintId: string) => Promise<void>;
 };
+
+const TEAM_MEMBERS_STORAGE_KEY = "taskorin_team_members";
 
 export const useWorkStore = create<WorkState>((set, get) => ({
   workspaces: [{ id: "w1", name: "Default Workspace" }],
@@ -100,6 +117,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
   activeProjectId: null,
   tasks: [],
   sprints: [],
+  teamMembers: [],
   isLoading: false,
 
   fetchInitialData: async () => {
@@ -108,10 +126,11 @@ export const useWorkStore = create<WorkState>((set, get) => ({
 
     set({ isLoading: true });
 
-    const [projectsRes, sprintsRes, tasksRes] = await Promise.all([
+    const [projectsRes, sprintsRes, tasksRes, membersRes] = await Promise.all([
       supabase.from('projects').select('*').eq('user_id', user.id),
       supabase.from('sprints').select('*'),
-      supabase.from('tasks').select('*, activity_logs(*)')
+      supabase.from('tasks').select('*, activity_logs(*)'),
+      supabase.from('team_members').select('*')
     ]);
 
     const projects = (projectsRes.data || []).map(p => ({
@@ -158,13 +177,119 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       })).sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     }));
 
+    // Setup initial creator team member from logged in user
+    const ownerMember: TeamMember = {
+      id: user.id,
+      name: user.name || user.email.split('@')[0] || "Project Owner",
+      email: user.email,
+      role: "Owner",
+      avatarUrl: user.avatar_url,
+      status: "Active",
+      invitedAt: new Date().toISOString()
+    };
+
+    let dbMembers: TeamMember[] = [];
+
+    if (!membersRes.error && membersRes.data && membersRes.data.length > 0) {
+      dbMembers = membersRes.data.map((m: any) => ({
+        id: m.id,
+        name: m.name,
+        email: m.email,
+        role: m.role || "Member",
+        avatarUrl: m.avatar_url,
+        status: m.status || "Active",
+        invitedAt: m.invited_at,
+        projectId: m.project_id
+      }));
+    } else {
+      // Fallback to localStorage
+      try {
+        const stored = localStorage.getItem(TEAM_MEMBERS_STORAGE_KEY);
+        if (stored) {
+          dbMembers = JSON.parse(stored);
+        }
+      } catch (e) {
+        console.error("Error reading team members from localStorage:", e);
+      }
+    }
+
+    // Combine creator with invited members (deduplicating by email/id)
+    const membersMap = new Map<string, TeamMember>();
+    membersMap.set(ownerMember.email.toLowerCase(), ownerMember);
+
+    dbMembers.forEach((m) => {
+      const key = m.email.toLowerCase();
+      if (!membersMap.has(key)) {
+        membersMap.set(key, m);
+      }
+    });
+
+    const combinedMembers = Array.from(membersMap.values());
+
     set({ 
       projects, 
       sprints, 
       tasks, 
+      teamMembers: combinedMembers,
       activeProjectId: projects[0]?.id || null,
       isLoading: false 
     });
+  },
+
+  inviteTeamMember: async ({ name, email, role = "Member", projectId }) => {
+    const newMember: TeamMember = {
+      id: `tm-${Math.random().toString(36).substring(2, 9)}`,
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      role: role,
+      status: "Active",
+      invitedAt: new Date().toISOString(),
+      projectId: projectId || get().activeProjectId || undefined
+    };
+
+    // Save to Supabase (if table exists)
+    try {
+      await supabase.from('team_members').insert({
+        id: newMember.id,
+        name: newMember.name,
+        email: newMember.email,
+        role: newMember.role,
+        status: newMember.status,
+        invited_at: newMember.invitedAt,
+        project_id: newMember.projectId
+      });
+    } catch (e) {
+      console.warn("Supabase insert team_members bypassed:", e);
+    }
+
+    // Always persist to local state & localStorage
+    const updatedMembers = [...get().teamMembers.filter(m => m.email.toLowerCase() !== newMember.email), newMember];
+    set({ teamMembers: updatedMembers });
+
+    try {
+      localStorage.setItem(TEAM_MEMBERS_STORAGE_KEY, JSON.stringify(updatedMembers));
+    } catch (e) {
+      console.error("Error saving team members to localStorage:", e);
+    }
+
+    return newMember;
+  },
+
+  removeTeamMember: async (memberId: string) => {
+    try {
+      await supabase.from('team_members').delete().eq('id', memberId);
+    } catch (e) {
+      console.warn("Supabase delete team_members bypassed:", e);
+    }
+
+    const updatedMembers = get().teamMembers.filter(m => m.id !== memberId && m.role !== "Owner");
+    set({ teamMembers: updatedMembers });
+
+    try {
+      localStorage.setItem(TEAM_MEMBERS_STORAGE_KEY, JSON.stringify(updatedMembers));
+    } catch (e) {
+      console.error("Error updating localStorage after removing team member:", e);
+    }
   },
 
   setActiveWorkspace: (id) => set({ activeWorkspaceId: id }),

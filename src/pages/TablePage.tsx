@@ -13,7 +13,7 @@ import { ArrowUpDown, Search, Trash2 } from "lucide-react";
 const columnHelper = createColumnHelper<TaskCard>();
 
 export function TablePage() {
-  const { tasks, updateTask, moveTaskStatus, activeProjectId, deleteTask } = useWorkStore();
+  const { tasks, teamMembers, updateTask, moveTaskStatus, activeProjectId, deleteTask } = useWorkStore();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
 
@@ -44,10 +44,11 @@ export function TablePage() {
             onChange={(e) => updateTask(info.row.original.id, (t) => ({ ...t, assignee: e.target.value }))}
             className="bg-transparent border-0 text-sm font-medium focus:ring-0 cursor-pointer hover:bg-slate-100 rounded px-1 -ml-1"
           >
-            <option>Aisha</option>
-            <option>Ravi</option>
-            <option>Nina</option>
-            <option>Karan</option>
+            {teamMembers.map((m) => (
+              <option key={m.id} value={m.name}>
+                {m.name}
+              </option>
+            ))}
           </select>
         );
       },
