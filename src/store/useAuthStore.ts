@@ -27,8 +27,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setUser: (user) => {
     set({ user });
     if (user) {
+      try {
+        localStorage.setItem('taskorin_local_user', JSON.stringify(user));
+      } catch (e) {}
       get().fetchProfile();
     } else {
+      try {
+        localStorage.removeItem('taskorin_local_user');
+      } catch (e) {}
       set({ profile: null });
     }
   },

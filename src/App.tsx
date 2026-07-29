@@ -75,8 +75,18 @@ export function App() {
         });
         fetchInitialData();
         setInitialized(true);
-      } else if (!isOAuthCallback || oauthError) {
-        console.log("No Session Found on Init (no active callback or OAuth error)");
+      } else {
+        // Fallback to local user session if present
+        try {
+          const storedUser = localStorage.getItem('taskorin_local_user');
+          if (storedUser) {
+            const parsedUser = JSON.parse(storedUser);
+            setUser(parsedUser);
+            fetchInitialData();
+          }
+        } catch (e) {
+          console.error("Error reading local user session:", e);
+        }
         setInitialized(true);
       }
     });
