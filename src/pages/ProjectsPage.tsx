@@ -169,12 +169,17 @@ export function ProjectsPage() {
                 <Trash2 size={18} />
               </button>
             </div>
-            <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full mb-4 inline-flex">
-              <Users size={14} />
-              {project.members} members
-            </span>
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
+                <Users size={14} />
+                {teamMembers.filter(m => (!m.projectId || m.projectId === project.id) && m.status === "Active").length} Active Members
+              </span>
+              <span className="text-xs font-black text-amber-900 bg-amber-100 px-2.5 py-1 rounded-full border border-amber-200">
+                👑 Project Creator
+              </span>
+            </div>
             <h3 className="text-lg font-bold text-slate-800 mb-1">{project.name}</h3>
-            <p className="text-sm text-slate-500 mb-6">Manage tasks, sprints, and track progress.</p>
+            <p className="text-sm text-slate-500 mb-6">Manage tasks, sprints, and track progress for this project.</p>
             
             <div>
               <div className="flex justify-between text-sm mb-2">

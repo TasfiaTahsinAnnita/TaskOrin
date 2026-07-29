@@ -242,6 +242,9 @@ export const useWorkStore = create<WorkState>((set, get) => ({
     const cleanEmail = email.trim().toLowerCase();
     const cleanName = name.trim();
     const inviterName = useAuthStore.getState().user?.name || "Workspace Admin";
+    const targetProjectId = projectId || get().activeProjectId || undefined;
+    const targetProject = get().projects.find(p => p.id === targetProjectId);
+    const targetProjectName = targetProject?.name || "TaskOrin Project";
 
     const newMember: TeamMember = {
       id: `tm-${Math.random().toString(36).substring(2, 9)}`,
@@ -251,10 +254,10 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       status: "Pending",
       invitedAt: new Date().toISOString(),
       invitedBy: inviterName,
-      projectId: projectId || get().activeProjectId || undefined
+      projectId: targetProjectId
     };
 
-    const inviteLink = `${window.location.origin}/?invite_id=${newMember.id}&invited_by=${encodeURIComponent(inviterName)}&member_name=${encodeURIComponent(cleanName)}&email=${encodeURIComponent(cleanEmail)}&role=${encodeURIComponent(role)}`;
+    const inviteLink = `${window.location.origin}/?invite_id=${newMember.id}&project_id=${targetProjectId || ''}&project_name=${encodeURIComponent(targetProjectName)}&invited_by=${encodeURIComponent(inviterName)}&member_name=${encodeURIComponent(cleanName)}&email=${encodeURIComponent(cleanEmail)}&role=${encodeURIComponent(role)}`;
 
     // Send real invitation email with magic link & custom redirect URL via Supabase Auth
     try {
@@ -264,7 +267,8 @@ export const useWorkStore = create<WorkState>((set, get) => ({
           data: { 
             full_name: cleanName,
             invited_by: inviterName,
-            invite_id: newMember.id
+            invite_id: newMember.id,
+            project_name: targetProjectName
           },
           emailRedirectTo: inviteLink
         }
@@ -293,7 +297,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
     }
 
     // Always persist to local state & localStorage
-    const updatedMembers = [...get().teamMembers.filter(m => m.email.toLowerCase() !== newMember.email), newMember];
+    const updatedMembers = [...get().teamMembers.filter(m => m.email.toLowerCase() !== newMember.email || m.projectId !== newMember.projectId), newMember];
     set({ teamMembers: updatedMembers });
 
     try {
@@ -312,8 +316,14 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       console.warn("Supabase update team_members bypassed:", e);
     }
 
+    const targetMember = get().teamMembers.find(m => m.id === memberId);
     const updatedMembers = get().teamMembers.map(m => m.id === memberId ? { ...m, status: "Active" as const } : m);
-    set({ teamMembers: updatedMembers });
+    
+    // Activate member and switch activeProjectId to the project they accepted
+    set({ 
+      teamMembers: updatedMembers,
+      ...(targetMember?.projectId ? { activeProjectId: targetMember.projectId } : {})
+    });
 
     try {
       localStorage.setItem(TEAM_MEMBERS_STORAGE_KEY, JSON.stringify(updatedMembers));

@@ -10,20 +10,22 @@ export function InviteAcceptModal() {
     memberName: string;
     email: string;
     role: string;
+    projectName: string;
   } | null>(null);
 
   const [acceptedToast, setAcceptedToast] = useState(false);
-  const { teamMembers, acceptTeamMember, removeTeamMember } = useWorkStore();
+  const { projects, teamMembers, acceptTeamMember, removeTeamMember } = useWorkStore();
   const currentUser = useAuthStore((state) => state.user);
 
   useEffect(() => {
     // 1. Check URL parameters
     const params = new URLSearchParams(window.location.search);
     const inviteId = params.get("invite_id");
-    const invitedBy = params.get("invited_by") || "A team member";
+    const invitedBy = params.get("invited_by") || "A project creator";
     const memberName = params.get("member_name") || currentUser?.name || "Team Member";
     const email = params.get("email") || currentUser?.email || "";
     const role = params.get("role") || "Member";
+    const projectName = params.get("project_name") || "TaskOrin Project";
 
     if (inviteId) {
       setInviteData({
@@ -31,7 +33,8 @@ export function InviteAcceptModal() {
         invitedBy: decodeURIComponent(invitedBy),
         memberName: decodeURIComponent(memberName),
         email: decodeURIComponent(email),
-        role: decodeURIComponent(role)
+        role: decodeURIComponent(role),
+        projectName: decodeURIComponent(projectName)
       });
       return;
     }
@@ -42,16 +45,18 @@ export function InviteAcceptModal() {
         m => m.email.toLowerCase() === currentUser.email.toLowerCase() && m.status === "Pending"
       );
       if (pendingInvite) {
+        const targetProj = projects.find(p => p.id === pendingInvite.projectId);
         setInviteData({
           id: pendingInvite.id,
           invitedBy: pendingInvite.invitedBy || "Project Creator",
           memberName: pendingInvite.name,
           email: pendingInvite.email,
-          role: pendingInvite.role
+          role: pendingInvite.role,
+          projectName: targetProj?.name || "TaskOrin Project"
         });
       }
     }
-  }, [teamMembers, currentUser]);
+  }, [teamMembers, currentUser, projects]);
 
   if (!inviteData) return null;
 
@@ -66,7 +71,7 @@ export function InviteAcceptModal() {
     setTimeout(() => {
       setInviteData(null);
       setAcceptedToast(false);
-    }, 2000);
+    }, 2200);
   };
 
   const handleDecline = async () => {
@@ -84,16 +89,16 @@ export function InviteAcceptModal() {
       <div className="bg-white max-w-md w-full rounded-2xl shadow-2xl border border-slate-100 overflow-hidden text-slate-800">
         
         {/* Banner Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white text-center relative overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 p-6 text-white text-center relative overflow-hidden">
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
           <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto mb-3 border border-white/30 shadow-lg">
             <MailCheck size={32} className="text-white" />
           </div>
           <div className="inline-flex items-center gap-1.5 bg-blue-500/40 text-blue-100 text-xs px-3 py-1 rounded-full font-semibold uppercase tracking-wider mb-2 border border-blue-400/30">
-            <Sparkles size={12} /> Team Invitation
+            <Sparkles size={12} /> Project Invitation
           </div>
           <h2 className="text-xl font-bold leading-snug">
-            You've Been Invited!
+            You've Been Invited to {inviteData.projectName}!
           </h2>
         </div>
 
@@ -104,20 +109,20 @@ export function InviteAcceptModal() {
               <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
                 <CheckCircle2 size={36} />
               </div>
-              <h3 className="text-xl font-bold text-slate-900">Welcome to the Team!</h3>
+              <h3 className="text-xl font-bold text-slate-900">Welcome to {inviteData.projectName}!</h3>
               <p className="text-sm text-slate-500">
-                Invitation accepted. You now have full access to the project tasks and workspace.
+                Invitation accepted! The project and all its Kanban stages, tasks, sprints, and table views are now open in your interface.
               </p>
             </div>
           ) : (
             <>
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
                 <p className="text-sm text-slate-600">
-                  <span className="font-bold text-slate-900">{inviteData.invitedBy}</span> has invited you to join the workspace as a:
+                  <span className="font-bold text-slate-900">{inviteData.invitedBy}</span> has invited you to join <span className="font-bold text-blue-600">{inviteData.projectName}</span> as a:
                 </p>
                 <div className="inline-flex items-center gap-1.5 bg-blue-100 text-blue-800 font-bold text-sm px-3.5 py-1 rounded-full border border-blue-200">
                   <ShieldCheck size={16} />
-                  {inviteData.role} Role
+                  {inviteData.role === "Admin" ? "⚡ Project Admin" : "👤 Team Member"}
                 </div>
                 <div className="pt-2 text-xs text-slate-400 border-t border-slate-200/60 mt-2">
                   Invited email: <span className="font-semibold text-slate-700">{inviteData.email}</span>
@@ -125,7 +130,7 @@ export function InviteAcceptModal() {
               </div>
 
               <p className="text-xs text-slate-500">
-                Accepting will grant you full access to collaborate, manage, and complete assigned tasks.
+                Accepting will give you instant access to this project, including its tasks, Kanban board, sprints, and team collaboration.
               </p>
 
               {/* Action Buttons */}
