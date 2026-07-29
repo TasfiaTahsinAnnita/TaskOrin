@@ -13,7 +13,7 @@ export function ProjectsPage() {
   const setActiveProject = useWorkStore((state) => state.setActiveProject);
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
-  const [showTeamModal, setShowTeamModal] = useState(false);
+  const [teamModalProjectId, setTeamModalProjectId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [members, setMembers] = useState("5");
   const [startDate, setStartDate] = useState("");
@@ -50,59 +50,47 @@ export function ProjectsPage() {
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Projects</h2>
-          <p className="text-sm text-slate-500">Manage all your projects, progress, and team members.</p>
+          <p className="text-sm text-slate-500">Overview of all active projects in your workspace.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button 
-            type="button" 
-            className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2.5 rounded-lg hover:bg-slate-700 transition-colors shadow-sm font-medium text-sm"
-            onClick={() => setShowTeamModal(true)}
-          >
-            <UserPlus size={18} />
-            Manage Team ({teamMembers.length})
-          </button>
-
-          <button 
-            type="button" 
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm"
-            onClick={() => setShowModal(true)}
-          >
-            <Plus size={18} />
-            New Project
-          </button>
-        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 bg-blue-600 text-white font-medium px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-sm"
+        >
+          <Plus size={16} />
+          Create Project
+        </button>
       </header>
 
-      <TeamMembersModal isOpen={showTeamModal} onClose={() => setShowTeamModal(false)} />
+      <TeamMembersModal
+        isOpen={Boolean(teamModalProjectId)}
+        onClose={() => setTeamModalProjectId(null)}
+        projectId={teamModalProjectId || undefined}
+      />
 
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="p-6 border-b border-slate-100">
-              <h3 className="text-lg font-bold text-slate-800">Create Project</h3>
-            </div>
-            <form className="p-6 space-y-4" onSubmit={handleCreateProject}>
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl space-y-4">
+            <h3 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3">New Project</h3>
+            <form onSubmit={handleCreateProject} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Project Name</label>
                 <input
                   type="text"
+                  required
                   value={name}
                   onChange={(event) => setName(event.target.value)}
-                  placeholder="e.g. Website Revamp"
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  required
+                  placeholder="e.g. Mobile App Redesign"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-700"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Team Size</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Target Team Members</label>
                 <input
                   type="number"
-                  min={1}
+                  min="1"
                   value={members}
                   onChange={(event) => setMembers(event.target.value)}
-                  placeholder="Number of members"
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  required
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-700"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -146,40 +134,57 @@ export function ProjectsPage() {
         {projects.map((project) => (
           <article 
             key={project.id} 
-            className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md hover:border-blue-300 transition-all group cursor-pointer"
+            className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md hover:border-blue-300 transition-all group cursor-pointer relative flex flex-col justify-between"
             onClick={() => {
               setActiveProject(project.id);
               navigate("/board");
             }}
           >
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                <LayoutList size={20} />
+            <div>
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                  <LayoutList size={20} />
+                </div>
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      setTeamModalProjectId(project.id);
+                    }} 
+                    className="flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md border border-blue-200 transition-colors"
+                    title="Manage team members for this project"
+                  >
+                    <UserPlus size={14} />
+                    Team
+                  </button>
+                  <button 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      if (confirm('Are you sure you want to delete this project? All tasks and sprints will be lost.')) {
+                        deleteProject(project.id);
+                      }
+                    }} 
+                    className="text-slate-300 hover:text-red-600 transition-colors p-1.5 rounded-md hover:bg-red-50 ml-1"
+                    title="Delete Project"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
-              <button 
-                onClick={(e) => { 
-                  e.stopPropagation(); 
-                  if (confirm('Are you sure you want to delete this project? All tasks and sprints will be lost.')) {
-                    deleteProject(project.id);
-                  }
-                }} 
-                className="text-slate-300 hover:text-red-600 transition-colors p-1 rounded-md hover:bg-red-50"
-                title="Delete Project"
-              >
-                <Trash2 size={18} />
-              </button>
+
+              <div className="flex items-center gap-2 mb-4 flex-wrap">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
+                  <Users size={14} />
+                  {teamMembers.filter(m => (!m.projectId || m.projectId === project.id) && m.status === "Active").length} Active Members
+                </span>
+                <span className="text-xs font-black text-amber-900 bg-amber-100 px-2.5 py-1 rounded-full border border-amber-200">
+                  👑 Project Creator
+                </span>
+              </div>
+
+              <h3 className="text-lg font-bold text-slate-800 mb-1">{project.name}</h3>
+              <p className="text-sm text-slate-500 mb-6">Manage tasks, sprints, and track progress for this project.</p>
             </div>
-            <div className="flex items-center gap-2 mb-4 flex-wrap">
-              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
-                <Users size={14} />
-                {teamMembers.filter(m => (!m.projectId || m.projectId === project.id) && m.status === "Active").length} Active Members
-              </span>
-              <span className="text-xs font-black text-amber-900 bg-amber-100 px-2.5 py-1 rounded-full border border-amber-200">
-                👑 Project Creator
-              </span>
-            </div>
-            <h3 className="text-lg font-bold text-slate-800 mb-1">{project.name}</h3>
-            <p className="text-sm text-slate-500 mb-6">Manage tasks, sprints, and track progress for this project.</p>
             
             <div>
               <div className="flex justify-between text-sm mb-2">
