@@ -291,13 +291,13 @@ export const useWorkStore = create<WorkState>((set, get) => ({
     // Ensure invited members see all accessible projects
     const userMemberProjectIds = new Set(
       combinedMembers
-        .filter(m => m.email.toLowerCase() === user.email.toLowerCase())
+        .filter(m => user.email && m.email.toLowerCase().trim() === user.email.toLowerCase().trim())
         .map(m => m.projectId)
         .filter(Boolean)
     );
 
     let visibleProjects = loadedProjects.filter(
-      p => !p.creatorId || p.creatorId === user.id || userMemberProjectIds.has(p.id)
+      p => (p.creatorId && p.creatorId === user.id) || userMemberProjectIds.has(p.id)
     );
 
     // Fallback: If filter yields 0, show all loaded projects so screen is NEVER blank

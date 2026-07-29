@@ -31,8 +31,12 @@ export function BoardPage() {
   const [selectedTask, setSelectedTask] = useState<TaskCard | null>(null);
   const [commentInput, setCommentInput] = useState("");
 
+  const projectMembers = useMemo(() => {
+    return teamMembers.filter(m => m.projectId === activeProjectId || (!m.projectId && project?.creatorId));
+  }, [teamMembers, activeProjectId, project]);
+
   // Select first team member name by default if not manually set
-  const activeAssignee = assignee || teamMembers[0]?.name || "Unassigned";
+  const activeAssignee = assignee || projectMembers[0]?.name || "Unassigned";
 
   const projectTasksRaw = useMemo(() => tasks.filter(t => t.projectId === activeProjectId), [tasks, activeProjectId]);
   
@@ -51,10 +55,10 @@ export function BoardPage() {
 
   const assigneesList = useMemo(() => {
     const set = new Set<string>();
-    teamMembers.forEach(m => set.add(m.name));
+    projectMembers.forEach(m => set.add(m.name));
     projectTasksRaw.forEach((task) => set.add(task.assignee));
     return ["All", ...Array.from(set)];
-  }, [teamMembers, projectTasksRaw]);
+  }, [projectMembers, projectTasksRaw]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

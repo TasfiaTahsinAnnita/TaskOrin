@@ -20,7 +20,7 @@ export function TeamMembersModal({ isOpen, onClose, projectId }: Props) {
 
   const targetProjectId = projectId || activeProjectId;
   const targetProject = projects.find(p => p.id === targetProjectId);
-  const rawProjectMembers = allMembers.filter(m => !m.projectId || !targetProjectId || m.projectId === targetProjectId);
+  const rawProjectMembers = allMembers.filter(m => m.projectId === targetProjectId || (!m.projectId && targetProject?.creatorId === currentUser?.id));
 
   // Deduplicate by email so a user never appears twice in the same project
   const uniqueProjectMembers = Array.from(
