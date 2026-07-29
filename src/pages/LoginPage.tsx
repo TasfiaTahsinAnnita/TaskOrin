@@ -1,5 +1,5 @@
 import { useNavigate, Link } from "react-router-dom";
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { LayoutDashboard, Mail, Lock, ArrowRight } from "lucide-react";
 
@@ -9,6 +9,16 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const oauthError = searchParams.get('error_description') || searchParams.get('error') || hashParams.get('error_description') || hashParams.get('error');
+
+    if (oauthError) {
+      setError(`Google Authentication Error: ${oauthError}`);
+    }
+  }, []);
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -29,18 +39,29 @@ export function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
-    const origin = window.location.origin;
-    const { error: googleError } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: origin.endsWith('/') ? origin : `${origin}/`,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
+    setLoading(true);
+    setError("");
+    try {
+      const origin = window.location.origin;
+      const redirectUrl = origin.endsWith('/') ? origin : `${origin}/`;
+      const { error: googleError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
+      });
+      if (googleError) {
+        setError(googleError.message);
+        setLoading(false);
       }
-    });
-    if (googleError) setError(googleError.message);
+    } catch (err: any) {
+      setError(err?.message || "Failed to initiate Google sign in. Please verify your Supabase setup.");
+      setLoading(false);
+    }
   };
 
   return (
@@ -56,11 +77,13 @@ export function LoginPage() {
 
         <div className="px-8 pb-8 space-y-6">
           <button
+            type="button"
             onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-3 bg-white border border-slate-300 py-3 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm active:scale-95"
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 bg-white border border-slate-300 py-3 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
-            Continue with Google
+            {loading ? "Connecting to Google..." : "Continue with Google"}
           </button>
 
           <div className="relative">

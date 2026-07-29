@@ -39,18 +39,26 @@ export function App() {
 
   useEffect(() => {
     console.log("Auth Initialization Started...");
-    const hasHash = window.location.hash.includes('access_token') || 
-                    window.location.hash.includes('error') ||
-                    window.location.hash.includes('id_token') ||
-                    window.location.search.includes('code=');
     
-    // Safety timeout: If initialization takes more than 10 seconds, force show the app
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    
+    const oauthError = searchParams.get('error_description') || searchParams.get('error') || hashParams.get('error_description') || hashParams.get('error');
+    const hasCode = searchParams.has('code');
+    const hasHashToken = window.location.hash.includes('access_token') || window.location.hash.includes('id_token');
+    const isOAuthCallback = hasCode || hasHashToken || !!oauthError;
+
+    if (oauthError) {
+      console.error("OAuth Error returned from provider:", oauthError);
+    }
+    
+    // Safety timeout: If initialization takes more than 6 seconds, force show ready state
     const safetyTimeout = setTimeout(() => {
       if (!useAuthStore.getState().initialized) {
         console.warn("Auth initialization timed out. Forcing ready state.");
         setInitialized(true);
       }
-    }, 8000);
+    }, 6000);
 
     // Check current session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
@@ -61,13 +69,13 @@ export function App() {
         setUser({
           id: session.user.id,
           email: session.user.email || "",
-          name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || "User",
-          avatar_url: session.user.user_metadata.avatar_url
+          name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || "User",
+          avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || ""
         });
         fetchInitialData();
         setInitialized(true);
-      } else if (!hasHash) {
-        console.log("No Session Found on Init, no hash detected");
+      } else if (!isOAuthCallback || oauthError) {
+        console.log("No Session Found on Init (no active callback or OAuth error)");
         setInitialized(true);
       }
     });
@@ -80,21 +88,18 @@ export function App() {
         setUser({
           id: session.user.id,
           email: session.user.email || "",
-          name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || "User",
-          avatar_url: session.user.user_metadata.avatar_url
+          name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || "User",
+          avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || ""
         });
         fetchInitialData();
         setInitialized(true);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setInitialized(true);
-      } else if (event === 'INITIAL_SESSION' && !session && !hasHash) {
-        setInitialized(true);
-      }
-      
-      // If there's an error in the hash, we should stop waiting
-      if (window.location.hash.includes('error')) {
-        setInitialized(true);
+      } else if (event === 'INITIAL_SESSION' && !session) {
+        if (!isOAuthCallback || oauthError) {
+          setInitialized(true);
+        }
       }
     });
 

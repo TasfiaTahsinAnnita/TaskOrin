@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { LayoutDashboard, User, Mail, Lock, ArrowRight } from "lucide-react";
 
@@ -10,6 +10,16 @@ export function SignupPage() {
   const [fullName, setFullName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const oauthError = searchParams.get('error_description') || searchParams.get('error') || hashParams.get('error_description') || hashParams.get('error');
+
+    if (oauthError) {
+      setError(`Google Authentication Error: ${oauthError}`);
+    }
+  }, []);
 
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
@@ -36,13 +46,29 @@ export function SignupPage() {
   };
 
   const handleGoogleLogin = async () => {
-    const { error: googleError } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin
+    setLoading(true);
+    setError("");
+    try {
+      const origin = window.location.origin;
+      const redirectUrl = origin.endsWith('/') ? origin : `${origin}/`;
+      const { error: googleError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
+      });
+      if (googleError) {
+        setError(googleError.message);
+        setLoading(false);
       }
-    });
-    if (googleError) setError(googleError.message);
+    } catch (err: any) {
+      setError(err?.message || "Failed to initiate Google sign up. Please verify your Supabase setup.");
+      setLoading(false);
+    }
   };
 
   return (
@@ -58,11 +84,13 @@ export function SignupPage() {
 
         <div className="px-8 pb-8 space-y-6">
           <button
+            type="button"
             onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-3 bg-white border border-slate-300 py-3 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm active:scale-95"
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 bg-white border border-slate-300 py-3 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
-            Sign up with Google
+            {loading ? "Connecting to Google..." : "Sign up with Google"}
           </button>
 
           <div className="relative">

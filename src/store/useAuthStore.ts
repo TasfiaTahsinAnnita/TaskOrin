@@ -39,14 +39,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const user = get().user;
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
 
-    if (!error && data) {
-      set({ profile: data });
+      if (!error && data) {
+        set({ profile: data });
+      } else {
+        // Create default profile for OAuth / new users if missing in DB
+        const defaultProfile: Profile = {
+          id: user.id,
+          full_name: user.name,
+          avatar_url: user.avatar_url || '',
+          bio: '',
+          role: 'Member'
+        };
+
+        const { data: upserted } = await supabase
+          .from('profiles')
+          .upsert(defaultProfile)
+          .select()
+          .single();
+
+        set({ profile: upserted || defaultProfile });
+      }
+    } catch (e) {
+      console.error("Error in fetchProfile:", e);
     }
   },
 
