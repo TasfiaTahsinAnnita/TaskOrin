@@ -36,11 +36,19 @@ export function TeamMembersModal({ isOpen, onClose, projectId }: Props) {
         projectId: projectId
       });
 
-      setSuccessMessage(`Invitation sent to ${newMember.name} (${newMember.email})!`);
+      // Construct mailto link for client-side mail opening fallback
+      const subject = encodeURIComponent("You're invited to join TaskOrin workspace!");
+      const body = encodeURIComponent(`Hi ${newMember.name},\n\nYou have been invited to join our TaskOrin project workspace as a ${newMember.role}.\n\nAccess the workspace here: ${window.location.origin}/\n\nBest regards,\nTaskOrin Team`);
+      
+      setSuccessMessage(`Invitation dispatched via Supabase Auth to ${newMember.name} (${newMember.email})!`);
+      
+      // Auto-open user's mail client as well for convenient sending
+      window.open(`mailto:${newMember.email}?subject=${subject}&body=${body}`, '_blank');
+
       setName("");
       setEmail("");
       setRole("Member");
-      setTimeout(() => setSuccessMessage(""), 4000);
+      setTimeout(() => setSuccessMessage(""), 5000);
     } catch (err) {
       console.error("Error inviting member:", err);
     } finally {

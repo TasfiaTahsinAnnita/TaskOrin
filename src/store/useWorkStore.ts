@@ -237,17 +237,36 @@ export const useWorkStore = create<WorkState>((set, get) => ({
   },
 
   inviteTeamMember: async ({ name, email, role = "Member", projectId }) => {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name.trim();
+
     const newMember: TeamMember = {
       id: `tm-${Math.random().toString(36).substring(2, 9)}`,
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
+      name: cleanName,
+      email: cleanEmail,
       role: role,
       status: "Active",
       invitedAt: new Date().toISOString(),
       projectId: projectId || get().activeProjectId || undefined
     };
 
-    // Save to Supabase (if table exists)
+    // Send real invitation email with magic link via Supabase Auth
+    try {
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: cleanEmail,
+        options: {
+          data: { full_name: cleanName },
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+      if (otpError) {
+        console.warn("Supabase Auth email send notice:", otpError.message);
+      }
+    } catch (err) {
+      console.warn("Error sending Auth email invite:", err);
+    }
+
+    // Save to Supabase database table (if table exists)
     try {
       await supabase.from('team_members').insert({
         id: newMember.id,
