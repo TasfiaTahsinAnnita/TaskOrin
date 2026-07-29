@@ -237,12 +237,12 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       })).sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     }));
 
-    // Setup initial creator team member from logged in user
+    // Setup initial team member entry for logged in user
     const ownerMember: TeamMember = {
       id: user.id,
-      name: user.name || user.email.split('@')[0] || "Project Owner",
+      name: user.name || user.email.split('@')[0] || "Team Member",
       email: user.email,
-      role: "Owner",
+      role: "Member",
       avatarUrl: user.avatar_url,
       status: "Active",
       invitedAt: new Date().toISOString()

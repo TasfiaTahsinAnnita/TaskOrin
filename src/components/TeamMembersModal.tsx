@@ -1,5 +1,5 @@
 import { useState, FormEvent } from "react";
-import { useWorkStore } from "../store/useWorkStore";
+import { useWorkStore, TeamMember } from "../store/useWorkStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { X, UserPlus, Mail, Trash2, CheckCircle2, UserCheck, Sparkles, LogOut } from "lucide-react";
 
@@ -20,9 +20,20 @@ export function TeamMembersModal({ isOpen, onClose, projectId }: Props) {
 
   const targetProjectId = projectId || activeProjectId;
   const targetProject = projects.find(p => p.id === targetProjectId);
-  const projectMembers = allMembers.filter(m => !m.projectId || !targetProjectId || m.projectId === targetProjectId);
+  const rawProjectMembers = allMembers.filter(m => !m.projectId || !targetProjectId || m.projectId === targetProjectId);
 
-  const currentUserMember = projectMembers.find(
+  // Deduplicate by email so a user never appears twice in the same project
+  const uniqueProjectMembers = Array.from(
+    rawProjectMembers.reduce((map: Map<string, TeamMember>, m: TeamMember) => {
+      const emailKey = m.email.toLowerCase();
+      if (!map.has(emailKey)) {
+        map.set(emailKey, m);
+      }
+      return map;
+    }, new Map<string, TeamMember>()).values()
+  );
+
+  const currentUserMember = uniqueProjectMembers.find(
     m => currentUser?.email && m.email.toLowerCase() === currentUser.email.toLowerCase()
   );
 
@@ -175,13 +186,14 @@ export function TeamMembersModal({ isOpen, onClose, projectId }: Props) {
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
                 <UserCheck size={16} className="text-slate-400" />
-                Project Members ({projectMembers.length})
+                Project Members ({uniqueProjectMembers.length})
               </h4>
             </div>
 
             <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto pr-1">
-              {projectMembers.map((member) => {
-                const isSelf = currentUser?.email && member.email.toLowerCase() === currentUser.email.toLowerCase();
+              {uniqueProjectMembers.map((member, index) => {
+                const isSelf = Boolean(currentUser?.email && member.email.toLowerCase() === currentUser.email.toLowerCase());
+                const isCreator = index === 0 || member.role === "Owner";
 
                 return (
                   <div key={member.id} className="py-3 flex items-center justify-between group hover:bg-slate-50/80 px-2 rounded-xl transition-colors">
@@ -201,17 +213,15 @@ export function TeamMembersModal({ isOpen, onClose, projectId }: Props) {
                               You
                             </span>
                           )}
-                          {member.role === "Owner" && (
+                          {isCreator ? (
                             <span className="bg-amber-100 text-amber-900 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-amber-300 shadow-sm flex items-center gap-1">
                               👑 Project Creator
                             </span>
-                          )}
-                          {member.role === "Admin" && (
+                          ) : member.role === "Admin" ? (
                             <span className="bg-indigo-100 text-indigo-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-indigo-200 flex items-center gap-1">
                               ⚡ Project Admin
                             </span>
-                          )}
-                          {member.role === "Member" && (
+                          ) : (
                             <span className="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-200">
                               👤 Team Member
                             </span>
@@ -248,21 +258,18 @@ export function TeamMembersModal({ isOpen, onClose, projectId }: Props) {
                         </span>
                       )}
 
-                      {/* Self Leave Option */}
-                      {isSelf && member.role !== "Owner" && (
+                      {/* Explicit Leave / Remove Action Buttons */}
+                      {isSelf ? (
                         <button
                           type="button"
                           onClick={() => handleLeaveProject(member.id)}
-                          className="flex items-center gap-1 text-xs font-bold text-rose-700 bg-rose-100 hover:bg-rose-200 px-3 py-1.5 rounded-lg border border-rose-300 transition-colors shrink-0"
-                          title="Leave this project"
+                          className="flex items-center gap-1.5 text-xs font-bold text-rose-700 bg-rose-100 hover:bg-rose-200 px-3 py-1.5 rounded-lg border border-rose-300 transition-colors shrink-0 shadow-sm"
+                          title="Leave this project and remove your membership"
                         >
-                          <LogOut size={13} />
+                          <LogOut size={14} />
                           Leave Project
                         </button>
-                      )}
-
-                      {/* Admin/Owner Delete Other Member */}
-                      {!isSelf && member.role !== "Owner" && (
+                      ) : (
                         <button
                           type="button"
                           onClick={() => {
@@ -286,7 +293,7 @@ export function TeamMembersModal({ isOpen, onClose, projectId }: Props) {
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
-          {currentUserMember && currentUserMember.role !== "Owner" ? (
+          {currentUserMember ? (
             <button
               type="button"
               onClick={() => handleLeaveProject(currentUserMember.id)}
