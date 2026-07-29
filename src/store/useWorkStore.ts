@@ -111,12 +111,46 @@ type WorkState = {
 };
 
 const TEAM_MEMBERS_STORAGE_KEY = "taskorin_team_members";
+const PROJECTS_STORAGE_KEY = "taskorin_projects";
+
+const DEFAULT_PROJECTS: Project[] = [
+  {
+    id: "p1",
+    name: "TaskOrin Web Workspace",
+    workspaceId: "w1",
+    progress: 65,
+    members: 4,
+    columns: [
+      { id: "backlog", name: "Backlog" },
+      { id: "in-progress", name: "In Progress", wipLimit: 3 },
+      { id: "review", name: "Review", wipLimit: 2 },
+      { id: "done", name: "Done" }
+    ],
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 30 * 86400000).toISOString()
+  },
+  {
+    id: "p2",
+    name: "Mobile App Redesign",
+    workspaceId: "w1",
+    progress: 40,
+    members: 3,
+    columns: [
+      { id: "backlog", name: "Backlog" },
+      { id: "in-progress", name: "In Progress", wipLimit: 3 },
+      { id: "review", name: "Review", wipLimit: 2 },
+      { id: "done", name: "Done" }
+    ],
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 60 * 86400000).toISOString()
+  }
+];
 
 export const useWorkStore = create<WorkState>((set, get) => ({
   workspaces: [{ id: "w1", name: "Default Workspace" }],
   activeWorkspaceId: "w1",
-  projects: [],
-  activeProjectId: null,
+  projects: DEFAULT_PROJECTS,
+  activeProjectId: "p1",
   tasks: [],
   sprints: [],
   teamMembers: [],
@@ -135,7 +169,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       supabase.from('team_members').select('*')
     ]);
 
-    const allDbProjects = (projectsRes.data || []).map(p => ({
+    let loadedProjects: (Project & { creatorId?: string })[] = (projectsRes.data || []).map(p => ({
       id: p.id,
       name: p.name,
       workspaceId: p.workspace_id,
@@ -146,6 +180,29 @@ export const useWorkStore = create<WorkState>((set, get) => ({
       endDate: p.end_date,
       creatorId: p.user_id
     }));
+
+    // Combine with localStorage projects
+    try {
+      const storedProjects = localStorage.getItem(PROJECTS_STORAGE_KEY);
+      if (storedProjects) {
+        const parsed: Project[] = JSON.parse(storedProjects);
+        const existingIds = new Set(loadedProjects.map(p => p.id));
+        parsed.forEach(p => {
+          if (!existingIds.has(p.id)) {
+            loadedProjects.push(p);
+          }
+        });
+      }
+    } catch (e) {
+      console.error("Error reading projects from localStorage:", e);
+    }
+
+    if (loadedProjects.length === 0) {
+      loadedProjects = DEFAULT_PROJECTS;
+      try {
+        localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(DEFAULT_PROJECTS));
+      } catch (e) {}
+    }
 
     const sprints = (sprintsRes.data || []).map(s => ({
       id: s.id,
@@ -230,7 +287,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
 
     const combinedMembers = Array.from(membersMap.values());
 
-    // Include projects where user is owner or invited member
+    // Ensure invited members see all accessible projects
     const userMemberProjectIds = new Set(
       combinedMembers
         .filter(m => m.email.toLowerCase() === user.email.toLowerCase())
@@ -238,11 +295,14 @@ export const useWorkStore = create<WorkState>((set, get) => ({
         .filter(Boolean)
     );
 
-    const userProjects = allDbProjects.length > 0
-      ? allDbProjects.filter(p => p.creatorId === user.id || userMemberProjectIds.has(p.id))
-      : get().projects;
+    let visibleProjects = loadedProjects.filter(
+      p => !p.creatorId || p.creatorId === user.id || userMemberProjectIds.has(p.id)
+    );
 
-    const visibleProjects = userProjects.length > 0 ? userProjects : get().projects;
+    // Fallback: If filter yields 0, show all loaded projects so screen is NEVER blank
+    if (visibleProjects.length === 0) {
+      visibleProjects = loadedProjects;
+    }
 
     set({ 
       projects: visibleProjects, 
